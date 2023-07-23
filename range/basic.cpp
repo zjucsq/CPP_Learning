@@ -1,6 +1,3 @@
-#include <__ranges/iota_view.h>
-#include <__ranges/take_view.h>
-#include <__ranges/transform_view.h>
 #include <iostream>
 #include <ranges>
 #include <vector>

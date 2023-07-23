@@ -1,5 +1,3 @@
-#include <__ranges/filter_view.h>
-#include <__ranges/transform_view.h>
 #include <cctype>
 #include <fstream>
 #include <iostream>
@@ -38,9 +36,8 @@ int main() {
                           return c - 26;
                         return c;
                       });
-             }) |
-             std::ranges::to<std::string>();
-  for (auto s : res) {
-    std::cout << s << std::endl;
-  }
+             });
+  // for (auto s : res) {
+  //   std::cout << s << std::endl;
+  // }
 }
