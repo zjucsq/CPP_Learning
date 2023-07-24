@@ -6,9 +6,9 @@ template <typename TAny> void test() {
   std::cout << "Testing " << typeid(TAny).name() << std::endl;
 
   TAny a = 123;
-  TAny b = std::string("hello");
-
   std::cout << any_cast<int>(a) << std::endl;
+
+  TAny b = std::string("hello");
   std::cout << any_cast<std::string>(b) << std::endl;
 
   try {
@@ -27,7 +27,9 @@ template <typename TAny> void test() {
 
 int main() {
   test<std::any>();
+  test<mystl::any_vf>();
   test<mystl::any_base>();
+  test<mystl::any>();
 
   return 0;
 }
