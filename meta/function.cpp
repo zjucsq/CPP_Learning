@@ -30,4 +30,7 @@ template <template <typename> typename F> void test() {
   print_size(f);
 }
 
-int main() { test<std::function>(); }
+int main() {
+  test<std::function>();
+  test<mystl::function_vf>();
+}
