@@ -12,3 +12,18 @@ https://www.zhihu.com/question/538063010
 无栈协程
 
 https://blog.csdn.net/github_18974657/article/details/108526591
+
+
+https://zhuanlan.zhihu.com/p/414506528
+co_return --> __context->_promise->return_void(); goto final_suspend_label;
+co_yield "hello" --> co_await __context->_promise->yield_value("hello");
+ 
+https://zhuanlan.zhihu.com/p/349710180
+
+
+实现generator https://zhuanlan.zhihu.com/p/599053058
+
+https://blog.csdn.net/qq_21438461/article/details/131230589
+
+https://zhuanlan.zhihu.com/p/371923001
+异步编程
