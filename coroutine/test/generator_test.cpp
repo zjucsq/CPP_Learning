@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../include/generator.h"
+#include "../include/2generator/generator.h"
 
 Generator<int> sequence() {
   int i = 0;

@@ -33,12 +33,11 @@ template <typename T> struct promise_type {
     if (!result_.has_value()) {
       completion_.wait(lock);
     }
-    completion_.notify_all();
+    return result_->get_or_throw();
   }
   void on_completed(std::function<void(Result<T>)> &&func) {
     std::unique_lock lock(completion_lock_);
     if (result_.has_value()) {
-      completion_.wait(lock);
       auto value = result_.value();
       lock.unlock();
       func(value);
