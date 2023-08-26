@@ -1,4 +1,4 @@
-#include <experimental/coroutine>
+#include <coroutine>
 #include <iostream>
 size_t level = 0;
 std::string INDENT = "-";
@@ -18,7 +18,7 @@ public:
 };
 template <typename T> struct sync {
   struct promise_type;
-  using handle_type = std::experimental::coroutine_handle<promise_type>;
+  using handle_type = std::coroutine_handle<promise_type>;
   handle_type coro;
 
   sync(handle_type h) : coro(h) {
@@ -68,7 +68,7 @@ template <typename T> struct sync {
     auto initial_suspend() {
       Trace t;
       std::cout << "Started the coroutine, don't stop now!" << std::endl;
-      return std::experimental::suspend_never{};
+      return std::suspend_never{};
       // std::cout << "--->Started the coroutine, put the brakes on!" <<
       // std::endl; return std::experimental::suspend_always{};
     }
@@ -76,12 +76,12 @@ template <typename T> struct sync {
       Trace t;
       std::cout << "Got an answer of " << v << std::endl;
       value = v;
-      return std::experimental::suspend_never{};
+      return std::suspend_never{};
     }
     auto final_suspend() noexcept {
       Trace t;
       std::cout << "Finished the coro" << std::endl;
-      return std::experimental::suspend_always{};
+      return std::suspend_always{};
     }
     void unhandled_exception() { std::exit(1); }
   };
@@ -89,7 +89,7 @@ template <typename T> struct sync {
 
 template <typename T> struct lazy {
   struct promise_type;
-  using handle_type = std::experimental::coroutine_handle<promise_type>;
+  using handle_type = std::coroutine_handle<promise_type>;
   handle_type coro;
 
   lazy(handle_type h) : coro(h) {
@@ -141,18 +141,18 @@ template <typename T> struct lazy {
       // std::cout << "Started the coroutine, don't stop now!" << std::endl;
       // return std::experimental::suspend_never{};
       std::cout << "Started the coroutine, put the brakes on!" << std::endl;
-      return std::experimental::suspend_always{};
+      return std::suspend_always{};
     }
     auto return_value(T v) {
       Trace t;
       std::cout << "Got an answer of " << v << std::endl;
       value = v;
-      return std::experimental::suspend_never{};
+      return std::suspend_never{};
     }
     auto final_suspend() noexcept {
       Trace t;
       std::cout << "Finished the coro" << std::endl;
-      return std::experimental::suspend_always{};
+      return std::suspend_always{};
     }
     void unhandled_exception() { std::exit(1); }
   };
@@ -162,7 +162,7 @@ template <typename T> struct lazy {
     std::cout << "Await " << (ready ? "is ready" : "isn't ready") << std::endl;
     return this->coro.done();
   }
-  void await_suspend(std::experimental::coroutine_handle<> awaiting) {
+  void await_suspend(std::coroutine_handle<> awaiting) {
     {
       Trace t;
       std::cout << "About to resume the lazy" << std::endl;

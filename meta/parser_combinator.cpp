@@ -1,25 +1,24 @@
+#include <iostream>
 #include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 using ParserInput = std::string_view;
 template <typename T>
 using ParserResult = std::optional<std::pair<T, ParserInput>>;
 template <typename T> using Parser = auto(*)(ParserInput) -> ParserResult<T>;
+template <typename> struct Parser_trait;
+template <typename T> struct Parser_trait<Parser<T>> {
+  using type = T;
+};
+template <typename T> using Parser_t = typename Parser_trait<T>::type;
 
-constexpr auto makeCharParser(char c) {
-  return [=](ParserInput s) -> ParserResult<char> {
-    if (s.empty() || c != s[0])
-      return std::nullopt;
-    return std::make_pair(s[0], ParserInput{s.begin() + 1, s.end()});
-  };
-}
-
-template <
-    typename P1, typename P2, typename F,
-    typename R = std::invoke_result_t<F, ParserResult<P1>, ParserResult<P2>>>
-constexpr auto and_(P1 &&p1, P2 &&p2, F &&f) {
+// combine :: Parser a -> Parser b -> (a -> b -> c) -> Parser c
+template <typename P1, typename P2, typename F,
+          typename R = std::invoke_result_t<F, Parser_t<P1>, Parser_t<P2>>>
+constexpr auto combine(P1 &&p1, P2 &&p2, F &&f) {
   return [=](ParserInput s) -> ParserResult<R> {
     auto r1 = p1(s);
     if (!r1)
@@ -31,8 +30,9 @@ constexpr auto and_(P1 &&p1, P2 &&p2, F &&f) {
   };
 }
 
+// foldL :: Parser a -> b -> (b -> a -> b) -> ParserInput -> ParserResult b
 template <typename P, typename R, typename F>
-constexpr auto foldL(P &&p, R acc, F &&f, ParserInput in) {
+constexpr auto foldL(P &&p, R acc, F &&f, ParserInput in) -> ParserResult<R> {
   while (true) {
     auto r = p(in);
     if (!r)
@@ -40,79 +40,65 @@ constexpr auto foldL(P &&p, R acc, F &&f, ParserInput in) {
     acc = f(acc, r->first);
     in = r->second;
   }
-}
+};
 
-// 匹配多次的parser
-template <typename P, typename F,
-          typename R = std::invoke_result_t<F, ParserResult<P>>>
-constexpr auto many(P &&p, F &&f) {
-  return [=](ParserInput s) -> ParserResult<R> {
-    R r;
-    while (true) {
-      auto r1 = p(s);
-      if (!r1)
-        break;
-      r = f(r, r1->first);
-      s = r1->second;
-    }
-    return std::make_pair(r, s);
+// many :: Parser a -> Parser monostate
+template <typename P> constexpr auto many(P &&p) {
+  return
+      [p = std::forward<P>(p)](ParserInput s) -> ParserResult<std::monostate> {
+        return FoldL(
+            p, std::monostate{}, [](auto acc, auto) { return acc; }, s);
+      };
+};
+
+// atLeast :: Parser a -> b -> (b -> a -> b) -> Parser b
+template <typename P, typename R, typename F>
+constexpr auto atLeast(P &&p, R &&init, F &&f) {
+  static_assert(std::is_same_v<std::invoke_result_t<F, R, Parser_t<P>>, R>,
+                "type mismatch!");
+  return [p = std::forward<P>(p), f = std::forward<F>(f),
+          init = std::forward<R>(init)](ParserInput s) -> ParserResult<R> {
+    auto r = p(s);
+    if (!r)
+      return std::nullopt;
+    return foldL(p, f(init, r->first), f, r->second);
   };
-}
+};
 
-// 匹配至少一次的parser
-template <typename P, typename F,
-          typename R = std::invoke_result_t<F, ParserResult<P>>>
-constexpr auto many1(P &&p, F &&f) {
-  return and_(p, many(p, f), f);
-}
-
-// 匹配0次或1次的parser
-template <typename P, typename F,
-          typename R = std::invoke_result_t<F, ParserResult<P>>>
-constexpr auto option(P &&p, F &&f) {
+// option :: Parser a -> a -> Parser a
+template <typename P, typename R = Parser_t<P>>
+constexpr auto option(P &&p, R &&defaultV) {
   return [=](ParserInput s) -> ParserResult<R> {
     auto r = p(s);
     if (!r)
-      return std::make_pair(f(), s);
-    return std::make_pair(f(r->first), r->second);
+      return make_pair(defaultV, s);
+    return r;
+  };
+};
+
+constexpr auto makeCharParser(char c) {
+  return [=](ParserInput s) -> ParserResult<char> {
+    if (s.empty() || c != s[0])
+      return std::nullopt;
+    return std::make_pair(s[0], ParserInput{s.begin() + 1, s.end()});
   };
 }
 
-// 匹配四则运算表达式的parser，like 1+2*3 return 7
-constexpr auto makeExprParser() {
-  auto makeNum = [](int n) { return [=](ParserInput) { return n; }; };
-  auto makeOp = [](char c) {
-    switch (c) {
-    case '+':
-      return [](int x, int y) -> int { return x + y; };
-    case '-':
-      return [](int x, int y) -> int { return x - y; };
-    case '*':
-      return [](int x, int y) -> int { return x * y; };
-    case '/':
-      return [](int x, int y) -> int { return x / y; };
-    default:
-      return [](int, int) -> int { return 0; };
-    }
-  };
-  auto digit = and_(makeCharParser('0'), makeCharParser('9'),
-                    [](char c1, char c2) { return c1 - '0'; });
-  auto num = many1(digit, [](int x, int y) { return x * 10 + y; });
-  auto op = and_(makeCharParser('+'), makeCharParser('*'), makeCharParser('-'),
-                 makeCharParser('/'),
-                 [](char c1, char c2, char c3, char c4) { return c1; });
-  auto expr =
-      and_(num,
-           many(and_(op, num, makeOp),
-                [](int x, int y) { return [=](ParserInput) { return y(x); }; }),
-           [](int x, auto f) { return f(x); });
-  return expr;
+// int parser
+constexpr auto intParser(ParserInput s) -> ParserResult<int> {
+  int r = 0;
+  for (auto c : s) {
+    if (c < '0' || c > '9')
+      break;
+    r = r * 10 + (c - '0');
+  }
+  return std::make_pair(r, ParserInput{s.begin(), s.end()});
 }
 
 int main() {
-  auto expr = makeExprParser();
-  auto r = expr("1+2*3");
+  constexpr ParserInput s = "12345";
+  constexpr auto r = intParser(s);
   if (r)
-    printf("%d\n", r->first);
+    std::cout << r->first << std::endl;
   return 0;
 }
