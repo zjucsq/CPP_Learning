@@ -8,7 +8,7 @@
 #include <vector>
 
 std::vector<std::string> read_file(std::string file_name) {
-  std::vector<std::string> words; // 定义存储字符串的vector容器
+  std::vector<std::string> words;
   std::string line, word;
 
   // 打开文件
@@ -25,6 +25,10 @@ std::vector<std::string> read_file(std::string file_name) {
   }
 
   return words;
+}
+
+std::string string_to_lower(const std::string &s) {
+  return s | std::views::transform(std::tolower);
 }
 
 int main() {

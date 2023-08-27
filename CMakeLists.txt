@@ -1,8 +1,13 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.22)
 project(cpp20)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set (CMAKE_C_COMPILER "gcc")
+set (CMAKE_CXX_COMPILER "g++")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # For clang-tidy.
+set(BUILD_SHARED_LIBS OFF)              # We expect external libraries to be linked statically.
+set(CMAKE_CXX_STANDARD 20)              # Compile as C++20.
+set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Require C++20 support.
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
 
