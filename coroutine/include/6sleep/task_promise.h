@@ -12,10 +12,10 @@
 
 template <typename T, typename E> struct Task;
 
-template <typename T, typename E> struct promise_type {
+template <typename T, typename E> struct promise_type_ {
   DispatchAwaiter initial_suspend() { return DispatchAwaiter{&executor}; }
   std::suspend_always final_suspend() noexcept { return {}; }
-  Task<T, E> get_return_object() { return Task{std::coroutine_handle<promise_type>::from_promise(*this)}; }
+  Task<T, E> get_return_object() { return Task{std::coroutine_handle<promise_type_>::from_promise(*this)}; }
   template <typename T_, typename E_> TaskAwaiter<T_, E_> await_transform(Task<T_, E_> &&task) { return TaskAwaiter<T_, E_>(&executor, std::move(task)); }
   template <typename Rep_, typename Period_> SleepAwaiter await_transform(std::chrono::duration<Rep_, Period_> &&duration) {
     return SleepAwaiter(&executor, std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());

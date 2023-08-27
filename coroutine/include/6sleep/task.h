@@ -13,7 +13,7 @@
 #include "task_promise.h"
 
 template <typename T, typename E> struct Task {
-  using promise_type = promise_type<T, E>;
+  using promise_type = promise_type_<T, E>;
   T get_result() { return handle_.promise().get_result(); }
 
   Task &then(std::function<void(T)> &&func) {
