@@ -25,6 +25,7 @@ Task<int, LooperExecutor> simple_task() {
   using namespace std::chrono_literals;
   co_await 100ms;
   debug("after 100ms ...");
+  // co_await 会发生所有权转移
   auto result2 = co_await simple_task2();
   debug("returns from task2: ", result2);
 

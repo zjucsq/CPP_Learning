@@ -8,6 +8,7 @@
 Task<int, NewThreadExecutor> simple_task2() {
   debug("task 2 start ...");
   using namespace std::chrono_literals;
+  // 不注释会死锁
   // co_await 1s;
   // debug("task 2 returns after 1s.");
   co_return 2;
