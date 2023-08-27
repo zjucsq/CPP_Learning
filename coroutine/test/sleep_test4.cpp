@@ -3,8 +3,9 @@
 #include "../include/6sleep/task.h"
 #include "../include/io_utils.h"
 
-// free 后访问
-Task<int, AsyncExecutor> simple_task2() {
+// 死锁
+
+Task<int, NoopExecutor> simple_task2() {
   debug("task 2 start ...");
   using namespace std::chrono_literals;
   co_await 1s;
@@ -12,7 +13,7 @@ Task<int, AsyncExecutor> simple_task2() {
   co_return 2;
 }
 
-Task<int, NewThreadExecutor> simple_task3() {
+Task<int, NoopExecutor> simple_task3() {
   debug("in task 3 start ...");
   using namespace std::chrono_literals;
   co_await 2s;
@@ -20,7 +21,7 @@ Task<int, NewThreadExecutor> simple_task3() {
   co_return 3;
 }
 
-Task<int, LooperExecutor> simple_task() {
+Task<int, NoopExecutor> simple_task() {
   debug("task start ...");
   using namespace std::chrono_literals;
   co_await 100ms;
@@ -38,10 +39,6 @@ Task<int, LooperExecutor> simple_task() {
 int main() {
   auto simpleTask = simple_task();
   simpleTask.then([](int i) { debug("simple task end: ", i); }).catching([](std::exception &e) { debug("error occurred", e.what()); });
-  try {
-    auto i = simpleTask.get_result();
-    debug("simple task end from get: ", i);
-  } catch (std::exception &e) {
-    debug("error: ", e.what());
-  }
+  auto i = simpleTask.get_result();
+  debug("simple task end from get: ", i);
 }

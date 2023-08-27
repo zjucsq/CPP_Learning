@@ -8,6 +8,8 @@
 #include <queue>
 #include <thread>
 
+#include "../io_utils.h"
+
 class AbstractExecutor {
 public:
   virtual void execute(std::function<void()> &&func) = 0;
@@ -52,6 +54,7 @@ private:
       lock.unlock();
       func();
     }
+    debug("LooperExecutor exit.");
   }
 
 public:

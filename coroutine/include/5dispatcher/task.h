@@ -10,10 +10,11 @@
 #include <utility>
 #include <variant>
 
+#include "../io_utils.h"
 #include "task_promise.h"
 
 template <typename T, typename E> struct Task {
-  using promise_type = promise_type<T, E>;
+  using promise_type = promise_type_<T, E>;
   T get_result() { return handle_.promise().get_result(); }
 
   Task &then(std::function<void(T)> &&func) {
@@ -51,8 +52,11 @@ template <typename T, typename E> struct Task {
   Task &operator=(Task &) = delete;
 
   ~Task() {
-    if (handle_)
+    if (handle_) {
+      debug((std::string("destroy task ") + std::to_string(reinterpret_cast<long long>(handle_.address()))).c_str());
       handle_.destroy();
+      debug((std::string("now task address ") + std::to_string(reinterpret_cast<long long>(handle_.address()))).c_str());
+    }
   }
 
 private:

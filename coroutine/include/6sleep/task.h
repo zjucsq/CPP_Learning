@@ -53,12 +53,15 @@ template <typename T, typename E> struct Task {
 
   ~Task() {
     if (handle_) {
+      // if (!is_destroy) {
       debug((std::string("destroy task ") + std::to_string(reinterpret_cast<long long>(handle_.address()))).c_str());
       handle_.destroy();
+      // is_destroy = true;
       debug((std::string("now task address ") + std::to_string(reinterpret_cast<long long>(handle_.address()))).c_str());
     }
   }
 
 private:
   std::coroutine_handle<promise_type> handle_;
+  // std::atomic_bool is_destroy{false};
 };

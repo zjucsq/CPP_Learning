@@ -65,6 +65,7 @@ class Scheduler {
       lock.unlock();
       executable();
     }
+    debug("scheduler exit.");
   }
 
 public:
