@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <type_traits>
 #include <utility>
 
@@ -10,8 +11,7 @@ template <typename Ret, typename... Args> class function_vf<Ret(Args...)> {
 public:
   function_vf() : func(nullptr) {}
 
-  template <typename F>
-  function_vf(F &&f) : func(new Callable<F>(std::forward<F>(f))) {}
+  template <typename F> function_vf(F &&f) : func(new Callable<F>(std::forward<F>(f))) {}
 
   function_vf(const function_vf &f) : func(f.func->clone()) {}
 

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(cpp20)
 
-set (CMAKE_C_COMPILER "gcc")
-set (CMAKE_CXX_COMPILER "g++")
+# set (CMAKE_C_COMPILER "/usr/local/bin/gcc")
+# set (CMAKE_CXX_COMPILER "/usr/local/bin/g++")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # For clang-tidy.
 set(BUILD_SHARED_LIBS OFF)              # We expect external libraries to be linked statically.
@@ -15,7 +15,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 file(GLOB CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*/*/*.cpp")
 
-set(NOT_COMPILE "")
+set(NOT_COMPILE "generator" "parser" "variant" "variant_example" "wordcount")
 
 foreach(file ${CPP_FILES})
     get_filename_component(filename ${file} NAME_WE)

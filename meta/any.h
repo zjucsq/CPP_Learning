@@ -5,8 +5,9 @@
 #pragma once
 
 #include <any>
+#include <cstring>
 #include <iostream>
-#include <sys/_types/_uintptr_t.h>
+#include <stdint.h>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -70,9 +71,7 @@ private:
 
   void swap(any_vf &rhs) noexcept { std::swap(data, rhs.data); }
 
-  template <typename T> T &get_data() const {
-    return static_cast<Data<T> *>(data)->t_;
-  }
+  template <typename T> T &get_data() const { return static_cast<Data<T> *>(data)->t_; }
 };
 
 template <typename T> T &any_cast(const any_vf &operand) {
@@ -89,32 +88,19 @@ private:
   using destroy_fn_t = void (*)(void *);
   using clone_fn_t = void *(*)(void *);
 
-  template <typename T> static void destroy_fn(void *p) {
-    delete static_cast<T *>(p);
-  }
+  template <typename T> static void destroy_fn(void *p) { delete static_cast<T *>(p); }
 
-  template <typename T> static void *clone_fn(void *p) {
-    return static_cast<void *>(new T(*static_cast<T *>(p)));
-  }
+  template <typename T> static void *clone_fn(void *p) { return static_cast<void *>(new T(*static_cast<T *>(p))); }
 
 public:
   template <typename T> friend T &any_cast(const any_base &);
 
   any_base() : data(nullptr), destroy(nullptr), clone(nullptr), t(nullptr) {}
-  template <typename T>
-  any_base(T &&t)
-      : data(new T(std::forward<T>(t))), destroy(destroy_fn<T>),
-        clone(clone_fn<T>), t(&typeid(T)) {}
+  template <typename T> any_base(T &&t) : data(new T(std::forward<T>(t))), destroy(destroy_fn<T>), clone(clone_fn<T>), t(&typeid(T)) {}
 
-  any_base(const any_base &other)
-      : data(other.clone(other.data)), destroy(other.destroy),
-        clone(other.clone), t(other.t) {}
+  any_base(const any_base &other) : data(other.clone(other.data)), destroy(other.destroy), clone(other.clone), t(other.t) {}
 
-  any_base(any_base &&other) noexcept
-      : data(other.data), destroy(other.destroy), clone(other.clone),
-        t(other.t) {
-    other.clear();
-  }
+  any_base(any_base &&other) noexcept : data(other.data), destroy(other.destroy), clone(other.clone), t(other.t) { other.clear(); }
 
   any_base &operator=(const any_base &rhs) {
     if (this != &rhs) {
@@ -176,15 +162,9 @@ struct small_RTTI {
   using destroy_fn_t = void (*)(void *);
   using clone_fn_t = void (*)(void *, const void *);
   using move_fn_t = void (*)(void *, void *);
-  template <typename T> static void destroy_fn(void *p) {
-    static_cast<T *>(p)->~T();
-  }
-  template <typename T> static void clone_fn(void *dst, const void *src) {
-    new (dst) T(*static_cast<const T *>(src));
-  }
-  template <typename T> static void move_fn(void *dst, void *src) {
-    new (dst) T(std::move(*static_cast<T *>(src)));
-  }
+  template <typename T> static void destroy_fn(void *p) { static_cast<T *>(p)->~T(); }
+  template <typename T> static void clone_fn(void *dst, const void *src) { new (dst) T(*static_cast<const T *>(src)); }
+  template <typename T> static void move_fn(void *dst, void *src) { new (dst) T(std::move(*static_cast<T *>(src))); }
   destroy_fn_t _destroy;
   clone_fn_t _clone;
   move_fn_t _move;
@@ -192,12 +172,8 @@ struct small_RTTI {
 struct big_RTTI {
   using destroy_fn_t = void (*)(void *);
   using clone_fn_t = void *(*)(const void *);
-  template <typename T> static void destroy_fn(void *p) {
-    delete static_cast<T *>(p);
-  }
-  template <typename T> static void *clone_fn(const void *p) {
-    return static_cast<void *>(new T(*static_cast<const T *>(p)));
-  }
+  template <typename T> static void destroy_fn(void *p) { delete static_cast<T *>(p); }
+  template <typename T> static void *clone_fn(const void *p) { return static_cast<void *>(new T(*static_cast<const T *>(p))); }
   destroy_fn_t _destroy;
   clone_fn_t _clone;
 };
@@ -218,21 +194,10 @@ struct storage_t {
   };
   uintptr_t type_data;
 };
-template <typename T>
-inline constexpr small_RTTI small_RTTI_obj = {&small_RTTI::destroy_fn<T>,
-                                              &small_RTTI::clone_fn<T>,
-                                              &small_RTTI::move_fn<T>};
-template <typename T>
-inline constexpr big_RTTI big_RTTI_obj = {&big_RTTI::destroy_fn<T>,
-                                          &big_RTTI::clone_fn<T>};
-template <typename T>
-inline constexpr bool is_small =
-    alignof(T) <= alignof(double) && sizeof(T) <= small_space_size &&
-    std::is_nothrow_move_constructible_v<T>;
-template <typename T>
-inline constexpr bool is_trival =
-    alignof(T) <= alignof(double) && sizeof(T) <= trivial_space_size &&
-    std::is_trivially_copyable_v<T>;
+template <typename T> inline constexpr small_RTTI small_RTTI_obj = {&small_RTTI::destroy_fn<T>, &small_RTTI::clone_fn<T>, &small_RTTI::move_fn<T>};
+template <typename T> inline constexpr big_RTTI big_RTTI_obj = {&big_RTTI::destroy_fn<T>, &big_RTTI::clone_fn<T>};
+template <typename T> inline constexpr bool is_small = alignof(T) <= alignof(double) && sizeof(T) <= small_space_size &&std::is_nothrow_move_constructible_v<T>;
+template <typename T> inline constexpr bool is_trival = alignof(T) <= alignof(double) && sizeof(T) <= trivial_space_size &&std::is_trivially_copyable_v<T>;
 class any {
 public:
   template <typename T> friend T any_cast(const any &);
@@ -258,27 +223,22 @@ public:
   any(const any &other) {
     storage.type_data = other.storage.type_data;
     if ((storage.type_data & 3) == 1) {
-      memcpy(storage.trival_data, other.storage.trival_data,
-             sizeof(other.storage.trival_data));
+      memcpy(storage.trival_data, other.storage.trival_data, sizeof(other.storage.trival_data));
     } else if ((storage.type_data & 3) == 2) {
       storage.small_storage._RTTI = other.storage.small_storage._RTTI;
-      storage.small_storage._RTTI->_clone(storage.small_storage.data,
-                                          other.storage.small_storage.data);
+      storage.small_storage._RTTI->_clone(storage.small_storage.data, other.storage.small_storage.data);
     } else if ((storage.type_data & 3) == 3) {
       storage.big_storage._RTTI = other.storage.big_storage._RTTI;
-      storage.big_storage.data_ptr =
-          storage.big_storage._RTTI->_clone(other.storage.big_storage.data_ptr);
+      storage.big_storage.data_ptr = storage.big_storage._RTTI->_clone(other.storage.big_storage.data_ptr);
     }
   }
 
   any(any &&other) noexcept : storage(other.storage) {
     if ((other.storage.type_data & 3) == 1) {
-      memcpy(storage.trival_data, other.storage.trival_data,
-             sizeof(other.storage.trival_data));
+      memcpy(storage.trival_data, other.storage.trival_data, sizeof(other.storage.trival_data));
     } else if ((storage.type_data & 3) == 2) {
       storage.small_storage._RTTI = other.storage.small_storage._RTTI;
-      storage.small_storage._RTTI->_move(storage.small_storage.data,
-                                         other.storage.small_storage.data);
+      storage.small_storage._RTTI->_move(storage.small_storage.data, other.storage.small_storage.data);
     } else if ((storage.type_data & 3) == 3) {
       storage.big_storage._RTTI = other.storage.big_storage._RTTI;
       storage.big_storage.data_ptr = other.storage.big_storage.data_ptr;
@@ -317,10 +277,7 @@ public:
 private:
   storage_t storage;
 
-  const std::type_info *get_type_info() const {
-    return reinterpret_cast<const std::type_info *>(storage.type_data &
-                                                    (-1 << 2));
-  }
+  const std::type_info *get_type_info() const { return reinterpret_cast<const std::type_info *>(storage.type_data & (-1 << 2)); }
 
   void clear() { storage.type_data = 0; }
 

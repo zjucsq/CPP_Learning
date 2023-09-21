@@ -1,7 +1,5 @@
 // https://en.cppreference.com/w/cpp/language/coroutines
 #include "jthread.h"
-#include <__coroutine/coroutine_handle.h>
-#include <__coroutine/trivial_awaitables.h>
 #include <coroutine>
 #include <iostream>
 #include <stdexcept>
@@ -33,12 +31,10 @@ struct task {
 };
 
 task resuming_on_new_thread(mystl::jthread &out) {
-  std::cout << "Coroutine started on thread: " << std::this_thread::get_id()
-            << '\n';
+  std::cout << "Coroutine started on thread: " << std::this_thread::get_id() << '\n';
   std::cout << co_await switch_to_new_thread(out) << '\n';
   // awaiter destroyed here
-  std::cout << "Coroutine resumed on thread: " << std::this_thread::get_id()
-            << '\n';
+  std::cout << "Coroutine resumed on thread: " << std::this_thread::get_id() << '\n';
 }
 
 int main() {

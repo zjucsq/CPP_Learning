@@ -1,4 +1,3 @@
-#include <__coroutine/trivial_awaitables.h>
 #include <coroutine>
 #include <exception>
 #include <iostream>
@@ -12,15 +11,12 @@ template <typename T> struct Generator {
     T value_;
     std::exception_ptr exception_;
 
-    Generator get_return_object() {
-      return Generator(handle_type::from_promise(*this));
-    }
+    Generator get_return_object() { return Generator(handle_type::from_promise(*this)); }
     std::suspend_always initial_suspend() { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
     void unhandled_exception() { exception_ = std::current_exception(); }
 
-    template <std::convertible_to<T> From>
-    std::suspend_always yield_value(From &&from) {
+    template <std::convertible_to<T> From> std::suspend_always yield_value(From &&from) {
       value_ = std::forward<From>(from);
       return {};
     }
@@ -59,8 +55,7 @@ Generator<std::uint64_t> fibonacci_sequence(unsigned n) {
     co_return;
 
   if (n > 94)
-    throw std::runtime_error(
-        "Too big Fibonacci sequence. Elements would overflow.");
+    throw std::runtime_error("Too big Fibonacci sequence. Elements would overflow.");
 
   co_yield 0;
 
