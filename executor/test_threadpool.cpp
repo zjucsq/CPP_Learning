@@ -1,5 +1,10 @@
 #include "ThreadPool.h"
+#include "utils.h"
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <iostream>
 #include <list>
 #include <mutex>
 #include <vector>
@@ -44,6 +49,7 @@ public:
 
 private:
   std::list<T> par_quick_sort(std::list<T> input) {
+    // print(input);
     if (input.empty())
       return input;
     std::list<T> result;
@@ -55,24 +61,15 @@ private:
     lower.splice(lower.begin(), input, input.begin(), divide_point);
 
     std::list<T> lower_sorted;
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool done{false};
-    threadpool.submit([&mtx, &cv, &done, &lower_sorted, this, lower{std::move(lower)}]() {
-      std::unique_lock lk(mtx);
+    std::atomic<bool> done{false};
+    threadpool.submit([&done, &lower_sorted, this, lower{std::move(lower)}]() {
       lower_sorted = par_quick_sort(std::move(lower));
-      done = true;
-      lk.unlock();
-      cv.notify_one();
+      done.store(true, std::memory_order_release);
     });
 
-    // std::list<T> lower_sorted{par_quick_sort(std::move(lower))};
     std::list<T> higher_sorted{par_quick_sort(std::move(input))};
 
-    std::unique_lock lk(mtx);
-    // cv.wait(lk, [&done]() { return done; });
-    while (!done) {
-      cv.wait(lk);
+    while (!done.load(std::memory_order_acquire)) {
       threadpool.run_pending_task();
     }
 
@@ -86,6 +83,7 @@ private:
 
 int main() {
   std::list<int> l{4, 5, 6, 3, 2, 5, 7, 8, 4, 2, 45, 7, 98, 9, 6, 5, 4};
+  // std::list<int> l{4, 5, 6, 3};
 
   std::vector<int> v{l.begin(), l.end()};
   std::sort(v.begin(), v.end());

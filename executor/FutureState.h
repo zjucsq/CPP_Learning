@@ -20,11 +20,17 @@ enum class State : uint8_t {
   DONE = 1 << 5,
 };
 
-constexpr State operator|(const State lhs, const State rhs) { return State((uint8_t)lhs | (uint8_t)rhs); }
+constexpr State operator|(const State lhs, const State rhs) {
+  return State((uint8_t)lhs | (uint8_t)rhs);
+}
 
-constexpr State operator&(const State lhs, const State rhs) { return State((uint8_t)lhs & (uint8_t)rhs); }
+constexpr State operator&(const State lhs, const State rhs) {
+  return State((uint8_t)lhs & (uint8_t)rhs);
+}
 
 }; // namespace detail
+
+template <typename T> class Feature;
 
 template <typename T> class FutureState {
 public:
@@ -47,7 +53,8 @@ public:
     auto state = state_.load(std::memory_order_acquire);
     switch (state) {
     case detail::State::START:
-      if (state_.compare_exchange_strong(state, detail::State::ONLY_RESULT, std::memory_order_release)) {
+      if (state_.compare_exchange_strong(state, detail::State::ONLY_RESULT,
+                                         std::memory_order_release)) {
         return;
       }
       assert(state_.load(std::memory_order_relaxed) == detail::State::ONLY_CONTINUATION);
@@ -64,11 +71,12 @@ public:
   template <typename F> void setContinuation(F &&func) {
     logicAssert(!hasContinuation(), "FutureState already has a continuation");
 
-    result_ = std::move(value);
+    // result_ = std::move(value);
     auto state = state_.load(std::memory_order_acquire);
     switch (state) {
     case detail::State::START:
-      if (state_.compare_exchange_strong(state, detail::State::ONLY_RESULT, std::memory_order_release)) {
+      if (state_.compare_exchange_strong(state, detail::State::ONLY_RESULT,
+                                         std::memory_order_release)) {
         return;
       }
       assert(state_.load(std::memory_order_relaxed) == detail::State::ONLY_CONTINUATION);
@@ -81,6 +89,8 @@ public:
       logicAssert(false, "State Transfer Error");
     }
   }
+
+  Try<T> getTry() { return result_; }
 
 private:
   std::atomic<detail::State> state_;
