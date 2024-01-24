@@ -29,13 +29,16 @@ int main() {
     }
     std::mt19937 g(42);
     std::shuffle(targets.begin(), targets.end(), g);
-    for (int t = 0; t < 10; ++t) {
+    double mean_time = 0;
+    for (int t = 0; t < 5; ++t) {
         clean_cache(pad);
         clock_t start, end;
         start = clock();
         int not_found_cnt = MultiLookUp(nums, targets);
         end = clock();
         std::cout << t << " time = " << double(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
+        mean_time += double(end - start) / CLOCKS_PER_SEC;
         std::cout << not_found_cnt << std::endl;
     }
+    std::cout << "mean time = " << mean_time / 5 << "s" << std::endl;
 }
