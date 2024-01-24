@@ -17,7 +17,7 @@ template <typename T> struct PrefectchAwaiter {
   constexpr bool await_ready() const noexcept { return false; }
 
   void await_suspend(std::coroutine_handle<> handle) noexcept {
-    _mm_prefetch((char const*)(std::addressof(value_)), _MM_HINT_NTA);
+    _mm_prefetch((char const*)(std::addressof(value_)), _MM_HINT_T0);
     executor_->execute([handle]() { handle.resume(); });
   }
 

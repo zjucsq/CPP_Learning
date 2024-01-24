@@ -107,7 +107,7 @@ public:
 class ThreadPoolExecutor : public AbstractExecutor {
 public:
   void execute(std::function<void()> &&func) override {
-    static ThreadPoolSimple threadpool;
+    static ThreadPoolSimple threadpool{std::thread::hardware_concurrency(), true, true};
     threadpool.submit(std::move(func));
   }
 };

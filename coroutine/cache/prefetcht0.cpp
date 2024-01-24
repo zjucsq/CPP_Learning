@@ -3,7 +3,7 @@
 #include <atomic>
 
 int MultiLookUp(std::vector<int> &nums, std::vector<int> &targets) {
-    executor::ThreadPoolSimple threadpool;
+    executor::ThreadPoolSimple threadpool{std::thread::hardware_concurrency(), true, true};
     std::atomic<int> not_found_cnt = 0;
     std::atomic<int> count_down = targets.size();
     for (auto t : targets) {
