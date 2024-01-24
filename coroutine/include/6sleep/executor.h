@@ -9,6 +9,8 @@
 #include <thread>
 
 #include "../io_utils.h"
+#include "../../../executor/ThreadPool.h"
+using namespace executor;
 
 class AbstractExecutor {
 public:
@@ -99,5 +101,13 @@ public:
   void execute(std::function<void()> &&func) override {
     static LooperExecutor sharedLooperExecutor;
     sharedLooperExecutor.execute(std::move(func));
+  }
+};
+
+class ThreadPoolExecutor : public AbstractExecutor {
+public:
+  void execute(std::function<void()> &&func) override {
+    static ThreadPoolSimple threadpool;
+    threadpool.submit(std::move(func));
   }
 };

@@ -113,11 +113,13 @@ public:
         stop_(false), queues_(threadNum_) {
     auto worker = [this](int id) {
       my_idx_ = id;
-      local_work_queue_ptr_ = &queues_[my_idx_];
+      local_work_queue_ptr_ = queues_[my_idx_].get();
       while (!stop_) {
         run_pending_task();
       }
     };
+    for (int i = 0; i < threadNum_; ++i)
+      queues_[i] = std::make_unique<ThreadSafeQueue<workItem>>();
 
 #ifdef __linux__
     std::vector<uint32_t> cpu_ids;
@@ -136,10 +138,9 @@ public:
       cpu_set_t cpuset;
       CPU_ZERO(&cpuset);
       CPU_SET(cpu_ids[i % cpu_ids.size()], &cpuset);
-      // sched_setaffinity绑定的是进程
+      // sched_setaffinity绑定进程
       int rc = pthread_setaffinity_np(threads_[i].native_handle(), CPU_SETSIZE, &cpuset);
       if (rc != 0) {
-        // std::cerr << "Error calling sched_setaffinity: " << rc << "\n";
         std::cerr << "Failed to call sched_setaffinity: " << std::strerror(errno) << '\n';
       }
 #endif
@@ -149,7 +150,7 @@ public:
   ~ThreadPoolSimple() {
     stop_ = true;
     for (auto &q : queues_) {
-      q.stop();
+      q->stop();
     }
     for (auto &t : threads_) {
       t.join();
@@ -170,6 +171,7 @@ public:
 
   bool scheduleById(std::function<void()> fn, int id);
 
+  // 这个函数是public的，也就是说线程执行任务时，发现如果需要在等待其他线程执行完任务，就可以调用这个函数，尝试取出任务执行，防止出现空等的情况
   void run_pending_task() {
     workItem worki = {};
     if (pop_task_from_local_queue(worki) || pop_task_from_global_queue(worki) ||
@@ -187,7 +189,7 @@ private:
   bool pop_task_from_other_thread_queue(workItem &w) {
     for (int i = 0; i < queues_.size() - 1; ++i) {
       auto index = (my_idx_ + i + 1) % queues_.size();
-      if (queues_[index].try_steal(w)) {
+      if (queues_[index]->try_steal(w)) {
         return true;
       }
     }
@@ -198,7 +200,7 @@ private:
   size_t threadNum_;
 
   ThreadSafeQueue<workItem> global_work_queue_;
-  std::vector<ThreadSafeQueue<workItem>> queues_;
+  std::vector<std::unique_ptr<ThreadSafeQueue<workItem>>> queues_;
   std::vector<std::thread> threads_;
 
   std::atomic<bool> stop_;

@@ -28,3 +28,21 @@ template <typename T> struct Generator {
 private:
   Handle handle_;
 };
+
+template <typename T> struct Generator {
+  struct promise_type {
+    // ...
+  };
+
+  using Handle = std::coroutine_handle<promise_type>;
+  explicit Generator(promise_type *p) : handle_(Handle::from_promise(*p)) {}
+  Generator(Generator &&g) : handle_(std::exchange(g.handle_, nullptr)) {}
+  ~Generator() { handle_.destroy(); }
+
+  void next() { handle_.resume(); }
+  int get() { return handle_.promise().value_; }
+  bool done() { return handle_.done(); }
+
+private:
+  Handle handle_;
+};

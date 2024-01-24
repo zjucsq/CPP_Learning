@@ -16,6 +16,18 @@ struct Awaiter {
   // 协程恢复执行之后，等待体的 await_resume 函数被调用。
   // 同样地，await_resume 的返回值类型也是不限定的，返回值将作为 co_await 表达式的返回值。
 };
+struct Awaiter {
+  bool await_ready();
+  // await_ready 返回 bool 类型，如果返回 true，则表示已经就绪，无需挂起；否则表示需要挂起。
+  ??? await_suspend(std::coroutine_handle<> coroutine_handle);
+  // await_ready 返回 false 时，协程就挂起了。这时候协程的局部变量和挂起点都会被存入协程的状态当中，await_suspend 被调用到。
+  // 返回 void 类型或者返回 true，表示当前协程挂起。
+  // 返回 false，则恢复执行当前协程。注意此时不同于 await_ready 返回 true 的情形，此时协程已经挂起，await_suspend 返回 false 相当于挂起又立即恢复。
+  // 返回其他协程的 coroutine_handle 对象，这时候返回的 coroutine_handle 对应的协程被恢复执行。
+  ??? await_resume()；
+  // 协程恢复执行之后，等待体的 await_resume 函数被调用。
+  // 同样地，await_resume 的返回值类型也是不限定的，返回值将作为 co_await 表达式的返回值。
+};
 ```
 
 标准库提供了两个简单的等待体
@@ -98,3 +110,8 @@ struct coroutine_traits : _Coroutine_traits<_Ret> {};
 
 
 ## test4，test5死锁问题
+
+
+https://www.zhihu.com/question/538063010/answer/2662507771?utm_psn=1695777739850866688
+
+co_await promise.yield_value(cy_ret)

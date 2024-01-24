@@ -80,7 +80,7 @@ Generator<std::uint64_t> fibonacci_sequence(unsigned n) {
 
 int main() {
   try {
-    auto gen = fibonacci_sequence(10); // max 94 before uint64_t overflows
+    auto gen = fibonacci_sequence(10);
 
     for (int j = 0; gen; j++)
       std::cout << "fib(" << j << ")=" << gen() << '\n';
